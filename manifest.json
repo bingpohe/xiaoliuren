@@ -1,0 +1,20 @@
+{
+  "name": "小六壬占卜 - 诸葛马前课",
+  "short_name": "小六壬",
+  "description": "中国传统小六壬掌诀占卜，诸葛马前课，预测吉凶祸福",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#8b1a1a",
+  "background_color": "#f5e6c8",
+  "categories": ["lifestyle", "entertainment"],
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "icons/LOGO68.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

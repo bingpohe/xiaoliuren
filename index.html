@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<!-- 视口配置：禁止缩放确保PWA全屏体验，viewport-fit=cover适配iPhone刘海屏 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<!-- PWA主题色：深红色，与App传统风格一致 -->
+<meta name="theme-color" content="#8b1a1a">
+<!-- iOS Safari 全屏模式支持 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="小六壬">
+<link rel="apple-touch-icon" href="icons/LOGO68.png">
+<meta name="description" content="小六壬占卜 - 诸葛马前课，中国传统占卜术">
+<link rel="manifest" href="manifest.json">
+<title>小六壬占卜</title>
+<style>
+  /*
+   * ==================== CSS 自定义属性 (Design Tokens) ====================
+   * 配色方案基于中国传统配色体系：
+   *   - 宣纸色系（bg/card/card2）模拟古籍纸张
+   *   - 朱砂红（red/red2）用于标题、按钮和凶兆
+   *   - 古铜金（gold/gold2/gold-light）用于边框、装饰和吉兆
+   *   - 水墨黑（text/text2）用于文字层级
+   * 所有颜色通过 CSS 变量管理，暗色模式只需覆盖变量值即可
+   */
+  :root {
+    --bg: #f5e6c8;              /* 页面背景 - 仿古宣纸色 */
+    --card: #fdf5e6;            /* 卡片背景 - 较亮的纸色（主要卡片） */
+    --card2: #faf0dc;           /* 次级卡片背景 - 略深的纸色（嵌套卡片） */
+    --text: #2c1810;            /* 主文字色 - 深墨色 */
+    --text2: #5c3a28;           /* 次级文字色 - 淡墨色（标签、辅助信息） */
+    --red: #b22222;             /* 朱砂红 - 用于强调、按钮渐变起点 */
+    --red2: #8b1a1a;            /* 深红 - 用于标题渐变终点、凶兆标识 */
+    --gold: #c8a44e;            /* 古铜金 - 用于边框高亮、装饰线 */
+    --gold2: #a07830;           /* 深金 - 用于金色文字 */
+    --gold-light: #e8d5a3;      /* 浅金 - 用于高亮背景（如当前掌诀位置） */
+    --green: #2d6a4f;           /* 翠绿 - 用于吉兆指示（在线状态点） */
+    --yin: #e8dcc8;             /* 阴阳底色 - 用于中央太极区域 */
+    --border: #d4c5a0;          /* 统一边框色 */
+    --shadow: rgba(44,24,16,0.12); /* 统一阴影 - 基于墨色 */
+    --radius: 16px;             /* 统一圆角半径 */
+    --safe-bottom: env(safe-area-inset-bottom, 16px); /* iPhone刘海屏底部安全区 */
+  }
+
+  /*
+   * 暗色模式配色
+   * 设计原则：
+   *   - 降低整体亮度，减少蓝光刺激
+   *   - 保持足够的对比度确保可读性
+   *   - 红色/金色适当提亮，在暗背景下仍能吸引注意力
+   */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1410;
+      --card: #231a12;
+      --card2: #2a1f16;
+      --text: #e8dcc8;
+      --text2: #c4b898;
+      --red: #d44444;
+      --red2: #b22222;
+      --gold: #d4b060;
+      --gold2: #b89030;
+      --gold-light: #5a4828;
+      --yin: #2a1f16;
+      --border: #3a2a18;
+      --shadow: rgba(0,0,0,0.3);
+    }
+  }
+
+  /* === 全局重置 === */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { height: 100%; -webkit-tap-highlight-color: transparent; } /* 移除iOS点击高亮 */
+  body {
+    font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100%;
+    min-height: 100dvh; /* dvh单位：移动端动态视口高度，避免地址栏遮挡 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px calc(20px + var(--safe-bottom)); /* 底部额外留白给安全区 */
+    -webkit-font-smoothing: antialiased; /* macOS/iOS字体平滑 */
+    user-select: none;          /* 禁止文本选择，增强App感 */
+    -webkit-user-select: none;
+    /*
+     * 页面背景纹理：上下两个径向渐变模拟光照
+     * - 上方金色光晕：暗示"吉兆"
+     * - 下方红色光晕：暗示"传统"（极淡，不影响阅读）
+     */
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(200,164,78,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 100%, rgba(139,26,26,0.05) 0%, transparent 40%);
+  }
+
+  /* ===== 页头 ===== */
+  .header {
+    text-align: center;
+    padding: 12px 0 8px;
+  }
+  .header .icon { font-size: 44px; margin-bottom: 4px; }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--red2);
+    letter-spacing: 3px;
+    /*
+     * 渐变文字技法：
+     * background-clip: text 将背景裁剪到文字形状，
+     * text-fill-color: transparent 让渐变透过文字显示
+     * 需要 -webkit- 前缀兼容更多浏览器
+     */
+    background: linear-gradient(180deg, var(--red) 0%, var(--red2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header .subtitle {
+    font-size: 13px;
+    color: var(--text2);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+
+  /* ===== 主容器 ===== */
+  .app-container {
+    width: 100%;
+    max-width: 420px; /* 限制最大宽度，大屏上保持居中卡片效果 */
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* 卡片之间的间距 */
+  }
+
+  /* ===== 通用卡片样式 ===== */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    /* 双层阴影：一层柔和的扩散阴影 + 一层1px的边框阴影模拟描边 */
+    box-shadow: 0 2px 12px var(--shadow), 0 0 0 1px var(--border);
+    border: 1px solid var(--border);
+  }
+
+  /* ===== 自动时间显示区 ===== */
+  .auto-time {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    background: var(--card2);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--text2);
+  }
+  .auto-time .label { opacity: 0.7; }
+  .auto-time .value {
+    font-weight: 600;
+    color: var(--red);
+    font-size: 16px;
+  }
+  /* 绿色呼吸灯：表示"系统在线"，类似古时香火不灭 */
+  .auto-time .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  /* 脉冲动画：模拟呼吸效果 */
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ===== 手动输入区 ===== */
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .input-group label {
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 1px;
+    text-align: center;
+  }
+  /* 下拉选择框统一样式 */
+  .input-group select {
+    appearance: none;           /* 移除浏览器默认下拉箭头 */
+    -webkit-appearance: none;
+    width: 100%;
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card2);
+    color: var(--text);
+    font-size: 15px;
+    text-align: center;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-group select:focus {
+    border-color: var(--gold); /* 聚焦时金色高亮 */
+  }
+  /* 数字输入框样式 */
+  .input-group input {
+    width: 100%;
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card2);
+    color: var(--text);
+    font-size: 15px;
+    text-align: center;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-group input:focus {
+    border-color: var(--gold);
+  }
+  .input-group input::placeholder {
+    color: var(--text2);
+    opacity: 0.4;
+    font-size: 12px;
+  }
+
+  /* ===== 按钮 ===== */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* 按下缩放反馈：给用户物理按压感 */
+  .btn:active {
+    transform: scale(0.96);
+  }
+  /* 主按钮：朱砂红渐变背景，带红色辉光 */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--red) 0%, var(--red2) 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(178,34,34,0.35);
+  }
+  .btn-primary:active {
+    box-shadow: 0 2px 8px rgba(178,34,34,0.25); /* 按下时阴影减淡 */
+  }
+  /* 描边按钮：透明背景，红色边框 */
+  .btn-outline {
+    background: transparent;
+    color: var(--red);
+    border: 1.5px solid var(--red);
+    font-size: 14px;
+    padding: 10px;
+    letter-spacing: 1px;
+  }
+
+  /*
+   * ===== 六宫格罗盘布局 =====
+   * 布局原理：
+   *   2行×3列 Grid 网格，中央叠加太极图
+   *   gap 透出背景色形成罗盘格线
+   *
+   *   罗盘排列：
+   *     ⑥ 空亡      ① 大安      ② 留连
+   *     ⑤ 小吉      ④ 赤口      ③ 速喜
+   */
+  .circle-container {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 2px;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    max-width: 400px;
+    margin: 0 auto;
+    background: var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  /* 中央太极图 */
+  .circle-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%); /* 居中定位 */
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--yin);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;               /* 确保太极图在最上层 */
+    transition: all 0.4s;
+  }
+  .circle-center .yin-yang {
+    font-size: 22px;
+    animation: spin-slow 12s linear infinite; /* 太极图缓慢旋转 */
+  }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* 掌诀卡片通用样式 */
+  .palace {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); /* 缓出缓入动画 */
+    cursor: default;
+    border: 2px solid transparent;
+    background: var(--card2);
+    box-shadow: 0 1px 4px var(--shadow);
+  }
+  .palace .p-name {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+  .palace .p-fortune {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--text2);
+  }
+  /* 数字序号（壹贰叁肆伍陆） */
+  .palace .p-index {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-size: 10px;
+    color: var(--text2);
+    opacity: 0.45;
+  }
+  /* 推算过程中当前停留位置（金色高亮） */
+  .palace.active {
+    border-color: var(--gold);
+    background: var(--gold-light);
+    box-shadow: 0 0 20px rgba(200,164,78,0.4), 0 4px 16px var(--shadow);
+    transform: scale(1.06);
+    z-index: 5;
+    animation: glow-pulse 0.6s ease-in-out;
+  }
+  /* 最终结果位置（红色高亮 + 呼吸光晕） */
+  .palace.result {
+    border-color: var(--red);
+    background: #fff;
+    box-shadow: 0 0 28px rgba(178,34,34,0.5), 0 4px 20px var(--shadow);
+    transform: scale(1.1);
+    z-index: 6;                /* 比active更高，确保结果最显眼 */
+    animation: result-glow 0.8s ease-in-out infinite alternate;
+  }
+  @keyframes glow-pulse {
+    0% { box-shadow: 0 0 0 rgba(200,164,78,0); }
+    50% { box-shadow: 0 0 28px rgba(200,164,78,0.5), 0 4px 16px var(--shadow); }
+    100% { box-shadow: 0 0 20px rgba(200,164,78,0.4), 0 4px 16px var(--shadow); }
+  }
+  @keyframes result-glow {
+    from { box-shadow: 0 0 20px rgba(178,34,34,0.4), 0 4px 16px var(--shadow); }
+    to { box-shadow: 0 0 36px rgba(178,34,34,0.7), 0 6px 24px var(--shadow); }
+  }
+  /* 推算过程中途经的位置（浅金色标记） */
+  .palace.counting {
+    border-color: var(--gold);
+    background: #fff8e8;
+    box-shadow: 0 0 16px rgba(200,164,78,0.35);
+    transform: scale(1.03);
+  }
+  /* 已走过的路径轨迹（比 counting 更淡，显示流转方向） */
+  .palace.trail {
+    border-color: var(--gold);
+    background: #fef9e7;
+    box-shadow: 0 0 4px rgba(200,164,78,0.1);
+    transform: scale(1.01);
+  }
+  @media (prefers-color-scheme: dark) {
+    .palace.trail {
+      background: #2a2010;
+    }
+  }
+
+  /*
+   * 六宫格罗盘排列（Grid order 控制）
+   *
+   * 罗盘顺时针排列：
+   *   ⑥空亡(左上)  ①大安(上中)  ②留连(右上)
+   *   ⑤小吉(左下)  ④赤口(下中)  ③速喜(右下)
+   *
+   * 使用 CSS order 属性重新排列 DOM 顺序（HTML中为1-6）
+   * 使其符合罗盘布局
+   */
+  .palace-1 { order: 1; }  /* 大安 - 上中 */
+  .palace-2 { order: 2; }  /* 留连 - 右上 */
+  .palace-3 { order: 5; }  /* 速喜 - 右下 */
+  .palace-4 { order: 4; }  /* 赤口 - 下中 */
+  .palace-5 { order: 3; }  /* 小吉 - 左下 */
+  .palace-6 { order: 0; }  /* 空亡 - 左上 */
+
+  /* ===== 推算步骤指示器 ===== */
+  .steps-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    padding: 4px 0;
+  }
+  /* 步骤圆点：显示"月→日→时"或"数1→数2→数3" */
+  .step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--yin);
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--text2);
+    transition: all 0.3s;
+  }
+  .step-dot.done {
+    background: var(--gold-light);   /* 步骤完成：浅金色 */
+    border-color: var(--gold);
+    color: var(--gold2);
+  }
+  .step-dot.current {
+    background: var(--red);          /* 当前步骤：红色脉冲 */
+    border-color: var(--red2);
+    color: #fff;
+    animation: pulse-dot 0.8s ease-in-out infinite;
+  }
+  .step-arrow {
+    color: var(--border);
+    font-size: 12px;
+  }
+
+  /* ===== 结果卡片 ===== */
+  .result-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 2px solid var(--gold);   /* 金色描边表示结果 */
+    box-shadow: 0 4px 24px var(--shadow), 0 0 0 1px var(--border);
+    overflow: hidden;
+    /* 滑入动画：从下方弹入，使用回弹缓动函数 */
+    animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  /* 结果头部：深红渐变背景，白色文字 */
+  .result-header {
+    background: linear-gradient(135deg, var(--red2) 0%, #5a1010 100%);
+    color: #fff;
+    padding: 18px 20px;
+    text-align: center;
+  }
+  .result-header .r-name {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 4px;
+  }
+  .result-header .r-fortune {
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-top: 4px;
+    opacity: 0.85;
+    padding: 2px 16px;
+    border-radius: 20px;
+    display: inline-block;
+  }
+  /* 吉兆标签：白色半透明底 */
+  .fortune-good { background: rgba(255,255,255,0.15); }
+  /* 凶兆标签：黑色半透明底 */
+  .fortune-bad { background: rgba(0,0,0,0.25); }
+  .result-body {
+    padding: 16px 18px;
+  }
+  /* 基础信息三列网格 */
+  .result-body .r-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr; /* 三列等宽 */
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .r-item {
+    background: var(--card2);
+    border-radius: 10px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .r-item .item-label {
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 1px;
+  }
+  .r-item .item-val {
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 2px;
+    color: var(--text);
+  }
+  /* 详细断辞列表 */
+  .detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .detail-item {
+    background: var(--card2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    border-left: 3px solid var(--gold); /* 左侧金色竖线，类似古书批注 */
+  }
+  .detail-item .d-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--red);
+    margin-bottom: 2px;
+  }
+  .detail-item .d-text {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  /* 传统口诀展示框 */
+  .koujue-box {
+    background: linear-gradient(135deg, #fef9e7 0%, #fdf3d0 100%); /* 淡黄色宣纸纹理 */
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin: 12px 0;
+    text-align: center;
+  }
+  .koujue-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold2);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .koujue-text {
+    font-size: 14px;
+    line-height: 1.9;
+    color: #5c3a18;
+    letter-spacing: 1px;
+    font-style: italic; /* 斜体增加古韵 */
+  }
+  @media (prefers-color-scheme: dark) {
+    .koujue-box {
+      background: linear-gradient(135deg, #2a2010 0%, #252010 100%);
+      border-color: var(--gold2);
+    }
+    .koujue-text { color: #d4c090; }
+  }
+
+  /* 分类断辞标题 */
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--red);
+    letter-spacing: 2px;
+    padding: 10px 0 6px;
+    text-align: center;
+  }
+
+  /* 吉凶指数进度条 */
+  .fortune-meter {
+    margin-top: 14px;
+    padding: 12px;
+    background: var(--card2);
+    border-radius: 12px;
+    text-align: center;
+  }
+  .meter-label {
+    font-size: 12px;
+    color: var(--text2);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .meter-bar {
+    height: 8px;
+    background: #e0d5c0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0 auto;
+    max-width: 240px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .meter-bar { background: #3a2a18; }
+  }
+  .meter-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease; /* 进度条填充动画 */
+  }
+  /* 吉兆进度条：绿色渐变 */
+  .meter-good { background: linear-gradient(90deg, #2d6a4f, #52b788); }
+  /* 凶兆进度条：红色渐变 */
+  .meter-bad { background: linear-gradient(90deg, #8b1a1a, #d44444); }
+  .meter-stars {
+    font-size: 13px;
+    margin-top: 4px;
+    color: var(--text2);
+    letter-spacing: 2px;
+  }
+
+  /* ===== PWA 安装提醒横幅 ===== */
+  .install-banner {
+    display: none;
+    background: var(--red2);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(178,34,34,0.3);
+  }
+  .install-banner.show { display: block; animation: slide-up 0.4s ease; }
+
+  /* ===== 辅助样式 ===== */
+  .divider {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text2);
+    opacity: 0.5;
+    letter-spacing: 2px;
+    padding: 4px 0;
+  }
+  .hidden { display: none !important; }
+
+  /* ===== 响应式适配 ===== */
+  /* 中等屏幕（420px+）：增大间距和字号 */
+  @media (min-width: 420px) {
+    body { padding: 32px 20px calc(32px + var(--safe-bottom)); }
+    .header h1 { font-size: 32px; }
+    .palace .p-name { font-size: 18px; }
+  }
+  /* 小屏幕（≤340px）：缩小掌诀卡片字号和输入框 */
+  @media (max-width: 340px) {
+    .palace .p-name { font-size: 14px; }
+    .circle-center { width: 36px; height: 36px; }
+    .circle-center .yin-yang { font-size: 18px; }
+    .input-group select { font-size: 13px; padding: 8px 4px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="icon">🏮</div>
+  <h1>小六壬占卜</h1>
+  <div class="subtitle">诸葛马前课 · 掌诀推算</div>
+</div>
+
+<div class="app-container">
+
+  <!-- 自动时间显示区：展示当前公历转农历 + 干支纪年 + 时辰 -->
+  <div class="card">
+    <div class="auto-time">
+      <span class="dot"></span>
+      <span class="label">今日</span>
+      <span class="value" id="autoDate">--</span>
+      <span class="value" id="autoTime">--</span>
+    </div>
+
+    <!-- 手动输入三要素：农历月、农历日、时辰 -->
+    <div class="input-row">
+      <div class="input-group">
+        <label>农历月</label>
+        <select id="lunarMonth"></select>
+      </div>
+      <div class="input-group">
+        <label>农历日</label>
+        <select id="lunarDay"></select>
+      </div>
+      <div class="input-group">
+        <label>时辰</label>
+        <select id="lunarHour"></select>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btnCalc" style="margin-top:12px">
+      🔮 开始推算
+    </button>
+    <button class="btn btn-outline" id="btnAuto" style="margin-top:8px">
+      📍 使用当前时间
+    </button>
+
+    <!-- 三数报数法：替代月日时，用任意三个数字起卦 -->
+    <div class="divider">— 或使用报数法 —</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>数一</label>
+        <input type="number" id="num1" placeholder="任意数" min="1" inputmode="numeric">
+      </div>
+      <div class="input-group">
+        <label>数二</label>
+        <input type="number" id="num2" placeholder="任意数" min="1" inputmode="numeric">
+      </div>
+      <div class="input-group">
+        <label>数三</label>
+        <input type="number" id="num3" placeholder="任意数" min="1" inputmode="numeric">
+      </div>
+    </div>
+    <button class="btn btn-outline" id="btnNumber" style="margin-top:8px; color: var(--gold2); border-color: var(--gold);">
+      🎲 随机取数推算
+    </button>
+  </div>
+
+  <!-- PWA 安装横幅：触发 beforeinstallprompt 后显示 -->
+  <div class="install-banner" id="installBanner" onclick="installApp()">
+    📲 点击安装到手机主屏幕，随时随地占卜
+  </div>
+
+  <!-- 六宫格可视化区域 -->
+  <div class="card" style="padding:8px">
+    <div class="circle-container" id="circleContainer">
+      <!-- 六个掌诀按顺时针排列（1-大安起，顺时针数） -->
+      <div class="palace palace-1" data-idx="1">
+        <span class="p-index">壹</span>
+        <span class="p-name">大安</span>
+        <span class="p-fortune">大吉</span>
+      </div>
+      <div class="palace palace-2" data-idx="2">
+        <span class="p-index">贰</span>
+        <span class="p-name">留连</span>
+        <span class="p-fortune">小凶</span>
+      </div>
+      <div class="palace palace-3" data-idx="3">
+        <span class="p-index">叁</span>
+        <span class="p-name">速喜</span>
+        <span class="p-fortune">吉</span>
+      </div>
+      <div class="palace palace-4" data-idx="4">
+        <span class="p-index">肆</span>
+        <span class="p-name">赤口</span>
+        <span class="p-fortune">凶</span>
+      </div>
+      <div class="palace palace-5" data-idx="5">
+        <span class="p-index">伍</span>
+        <span class="p-name">小吉</span>
+        <span class="p-fortune">小吉</span>
+      </div>
+      <div class="palace palace-6" data-idx="6">
+        <span class="p-index">陆</span>
+        <span class="p-name">空亡</span>
+        <span class="p-fortune">大凶</span>
+      </div>
+      <!-- 中央阴阳太极图 -->
+      <div class="circle-center">
+        <span class="yin-yang">☯</span>
+      </div>
+    </div>
+
+    <!-- 推算步骤指示器：显示月→日→时或数1→数2→数3的动画进度 -->
+    <div class="steps-row" style="margin-top:8px">
+      <span class="step-dot" id="step1">月</span>
+      <span class="step-arrow">→</span>
+      <span class="step-dot" id="step2">日</span>
+      <span class="step-arrow">→</span>
+      <span class="step-dot" id="step3">时</span>
+    </div>
+  </div>
+
+  <!-- 结果卡片：初始隐藏，推算完成后动态填充并显示 -->
+  <div class="result-card hidden" id="resultCard"></div>
+
+</div>
+
+<script>
+/*
+ * ==================== 农历数据编码格式 ====================
+ *
+ * LUNAR_YEAR_DATA 数组每个元素用 20 位二进制编码一个农历年：
+ *
+ *   bits 0-3:  闰月月份 (0=无闰月, 1-12=闰几月)
+ *   bits 4-15: 每月大小月 (bit 4=正月, bit 5=二月, ... bit 15=腊月)
+ *              1=30天(大月), 0=29天(小月)
+ *   bits 16-19: 闰月大小 (闰月是29还是30天, 无闰月则为0)
+ *
+ * 例如: 0x04bd8 (1900年) = 0000 0100 1011 1101 1000
+ *       闰月=8(无), 正月大(1) 二月小(0) 三月大(1) 四月小(0) 五月大(1) 六月大(0)...
+ *
+ * 数据来源: 香港天文台农历数据, 覆盖 1900-2100 共 201 年
+ */
+const LUNAR_YEAR_DATA = [
+  0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2, // 1900-1909
+  0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977, // 1910-1919
+  0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970, // 1920-1929
+  0x06566,0x0d4a0,0x0ea50,0x16a95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950, // 1930-1939
+  0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557, // 1940-1949
+  0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0, // 1950-1959
+  0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0, // 1960-1969
+  0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6, // 1970-1979
+  0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570, // 1980-1989
+  0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,0x092e0, // 1990-1999
+  0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5, // 2000-2009
+  0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930, // 2010-2019
+  0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530, // 2020-2029
+  0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45, // 2030-2039
+  0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0, // 2040-2049
+  0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06aa0,0x1a6c4,0x0aae0, // 2050-2059
+  0x092e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4, // 2060-2069
+  0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0, // 2070-2079
+  0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x14b55,0x04b60,0x0a570,0x054e4,0x0d160, // 2080-2089
+  0x0e968,0x0d520,0x0daa0,0x16aa6,0x056d0,0x04ae0,0x0a9d4,0x0a4d0,0x0d150,0x0f252, // 2090-2099
+  0x0d520                                                        // 2100
+];
+
+/*
+ * 天干地支 & 生肖
+ * 干支纪年：10天干 + 12地支 = 60甲子循环
+ * 计算起点：公元4年为甲子年，所以 (year-4) % 10 得干, (year-4) % 12 得支
+ */
+const STEMS = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const BRANCHES = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const ZODIAC = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
+
+/*
+ * 十二时辰对照表
+ * 古代一天分为12个时辰，每个时辰2小时
+ * 子时从23:00开始，对应地支"子"
+ * hour 字段为时辰序号(1-12)，用于小六壬推算
+ */
+const SHI_CHEN = [
+  { name: '子时', range: '23:00-01:00', hour: 1 },
+  { name: '丑时', range: '01:00-03:00', hour: 2 },
+  { name: '寅时', range: '03:00-05:00', hour: 3 },
+  { name: '卯时', range: '05:00-07:00', hour: 4 },
+  { name: '辰时', range: '07:00-09:00', hour: 5 },
+  { name: '巳时', range: '09:00-11:00', hour: 6 },
+  { name: '午时', range: '11:00-13:00', hour: 7 },
+  { name: '未时', range: '13:00-15:00', hour: 8 },
+  { name: '申时', range: '15:00-17:00', hour: 9 },
+  { name: '酉时', range: '17:00-19:00', hour: 10 },
+  { name: '戌时', range: '19:00-21:00', hour: 11 },
+  { name: '亥时', range: '21:00-23:00', hour: 12 }
+];
+
+/*
+ * ==================== 小六壬掌诀数据 ====================
+ *
+ * 六掌诀完整数据，每个包含：
+ *   - 基本信息：名称、吉凶、五行、方位、六神、数字
+ *   - koujue：传统口诀（古文本，韵律体）
+ *   - overview：掌诀总断（现代白话）
+ *   - details：十个分类的详细断辞
+ *     (总体运程、事业、财运、感情、健康、寻物、行人、官非、交易、田宅)
+ *
+ * fortuneLevel: 1-6星评级
+ * 
+ *   6★ = 大吉（大安）
+ *   5★ = 吉（速喜）
+ *   4★ = 小吉（小吉）
+ *   3★ = 小凶（留连）
+ *   2★ = 凶（空亡）
+ *   1★ = 大凶（赤口）
+ */
+const PALACES = {
+  1: {
+    name: '大安', fortune: '大吉', fortuneLevel: 6,
+    element: '木', elementColor: '青色',
+    direction: '东方', nobleDirection: '西南方', conflictDirection: '东方',
+    sixGod: '青龙', numbers: '一、五、七',
+    emoji: '🟢', starRating: '⭐⭐⭐⭐⭐⭐',
+    koujue: '大安事事昌，求谋在东方，失物去不远，宅舍保安康。\n行人身未动，病者主无妨，将军回田野，仔细更推详。',
+    overview: '身不动时，主静止、心安、吉祥。为最安稳之卦，表示事情平安顺利，不宜大动。失物在附近可寻回，行人尚未出发或未走远，病人无大碍。宜静不宜动，安居守成。春占最吉。',
+    details: {
+      总体运程: '万事亨通，平安顺遂，稳定发展。当前运势良好，宜静不宜动，守住现有局面即可稳步提升。',
+      事业工作: '工作安稳，可得上司赏识，但不宜锋芒太露。守成为上，勿轻易跳槽或变动。有贵人暗中相助。',
+      财运求财: '财运平稳，正财可得，偏财不宜。求财可成，但不宜扩张，只能守旧业。求财方位：西南方（坤方）。',
+      感情婚姻: '女子问则感情顺遂，婚姻可成；男子问则平淡少新鲜感。大安同宫婚百祥，婚姻成就地。',
+      健康疾病: '身体少病，注意肝胆调养和饮食规律。近病无碍寿必良，久病必是缓中强。大安不久病离床。',
+      失物寻物: '失物去不远，正西或西南可寻见。东西未走远，在家中或附近仔细找找。',
+      行人出行: '行人身未动，人平安但暂未动身。寻人一五七日可有消息。出行平安顺利。',
+      官非诉讼: '官事吉，有福德。诉讼可缓和处理，不必过于担忧。',
+      交易买卖: '交易可成，但不宜急进。稳扎稳打，细水长流。',
+      田宅家宅: '宅舍保安康。家宅平安，居家和睦。田宅事宜顺利。'
+    }
+  },
+  2: {
+    name: '留连', fortune: '小凶', fortuneLevel: 3,
+    element: '水', elementColor: '黑色',
+    direction: '北方', nobleDirection: '南方', conflictDirection: '北方',
+    sixGod: '玄武', numbers: '二、八、十',
+    emoji: '🔵', starRating: '⭐⭐⭐',
+    koujue: '留连事难成，求谋日未明，官事只宜缓，去者来回程。\n失物南方见，急讨方遂心，更须防口舌，人事且平平。',
+    overview: '人未归时，主暗昧不明、拖延纠缠。求事难成，需耐心等待。官非纠纷宜缓不宜急，出行者可能在外徘徊未归。注意防范口舌是非，人际关系平淡。凡事拖泥带水，难得干脆利落的结果。',
+    details: {
+      总体运程: '凡事阻滞，心情不开朗，宜静不宜动，等待时机。当前运势低迷，诸事多有拖延，需耐心。',
+      事业工作: '工作多有拖延，被上司盯或被人扯后腿，小人之卦。勿冲动行事，暂时忍耐为上。',
+      财运求财: '财运不济，有破财之象。求财不可得，被人影响而破财。节流为上，勿投资。',
+      感情婚姻: '双方沟通不良，冷战，感情不平衡。先苦后来甜，需多沟通理解。婚姻不可言。',
+      健康疾病: '注意肾脏泌尿系统、肠胃之病。精神压力大，失眠多梦。此日病者必不祥，少熬夜。',
+      失物寻物: '失物南方见，急讨方遂心。贼人转手避人群，需赶快寻找，否则难追回。',
+      行人出行: '去者未回程，人平安但流连忘返。行人受阻，归期延迟，在外徘徊。',
+      官非诉讼: '官事只宜缓。不宜急于打官司，拖延为上策。',
+      交易买卖: '求谋日未明，合伙谋划事不张。交易难成，时机未到。',
+      田宅家宅: '人事且平平，家中琐事多。注意邻里关系，防口舌。'
+    }
+  },
+  3: {
+    name: '速喜', fortune: '吉', fortuneLevel: 5,
+    element: '火', elementColor: '红色',
+    direction: '南方', nobleDirection: '西南方', conflictDirection: '南方',
+    sixGod: '朱雀', numbers: '三、六、九',
+    emoji: '🔴', starRating: '⭐⭐⭐⭐⭐',
+    koujue: '速喜喜来临，求财向南行，失物申未午，逢人路上寻。\n官事有福德，病者无祸侵，田宅六畜吉，行人有音信。',
+    overview: '人便至时，主快速、喜庆、时机已到。喜事临门，求财吉利，尤其利于南方。失物可在申、未、午方向（南或西南）寻找。官司有贵人相助，病人无大碍，家宅田产六畜兴旺。夏占最吉。',
+    details: {
+      总体运程: '喜事将至，万事顺遂，心想事成。运势渐开，积极行动即可如愿。好事来得快。',
+      事业工作: '工作顺利，宜积极进取。仕途必升官位坐，有晋升之喜。注意文件疏失。',
+      财运求财: '财运亨通，正偏财皆有收获。求财向南行，有先破后得或先得后破之兆。交易买卖财路阔。',
+      感情婚姻: '刚开始的感情则热恋甜蜜，持续一段时间的则易有口舌。婚事占宫龙子通，喜事临门。',
+      健康疾病: '身体精力充沛。注意心脏、血液循环、头部问题。近病晦气速转吉，旧病也可痊愈。',
+      失物寻物: '失物速寻申未午方向（南/西南），失物可寻。路上逢女细追寻，可询问路人。',
+      行人出行: '行人有喜音，人已快到了。行人音信转回乡，很快就有消息。出行吉利。',
+      官非诉讼: '官事有福德，贵人相助。诉讼事宜有转机，不必过于担忧。',
+      交易买卖: '交易甚是强，买卖顺利。利于南方交易，时机正好。',
+      田宅家宅: '田宅六畜吉。家宅兴旺，六畜平安。居家顺遂。'
+    }
+  },
+  4: {
+    name: '赤口', fortune: '凶', fortuneLevel: 2,
+    element: '金', elementColor: '白色',
+    direction: '西方', nobleDirection: '东方', conflictDirection: '西方',
+    sixGod: '白虎', numbers: '四、七、十',
+    emoji: '🟡', starRating: '⭐⭐',
+    koujue: '赤口主口舌，官非切要防，失物急去寻，行人有惊慌。\n鸡犬多作怪，病者出西方，更须防咀咒，恐怕染瘟殃。',
+    overview: '官事凶时，主口舌是非、惊恐凶险。最需防范官非纠纷和人际冲突。失物要立刻去寻找，否则难以追回。出行者可能遇到惊慌之事。需防范诅咒是非与传染性疾病。秋占更凶。',
+    details: {
+      总体运程: '运势低迷，口舌是非多，诸事不顺。大计划宜速行，小事不成。需处处谨慎。',
+      事业工作: '工作有阻碍，防小人暗算。武职或粗重行业则顺，文职则不顺。勿与人争执。',
+      财运求财: '财运大起大落，求财不易。投资需谨慎，防诈骗。有破财之象。',
+      感情婚姻: '感情纷争多，口角不断。女方身体可能有疾病。白虎占婚切莫当，婚姻需谨慎。',
+      健康疾病: '注意肺部呼吸系统，防意外伤灾和血光之灾。胸口支气管问题。恐染瘟殃，注意传染病。',
+      失物寻物: '失物急去寻！东南西南藏。须防小人暗诅咒，寻物莫听女人言。时间紧迫。',
+      行人出行: '行人有惊慌，所问之人有困难或事情纠缠。出行不利，多坎坷。',
+      官非诉讼: '官非切要防！最容易惹上官司口舌，需格外小心。避免与人冲突。',
+      交易买卖: '交易不顺，易有纠纷。合同文书需仔细，防对方做手脚。',
+      田宅家宅: '鸡犬多作怪，家中六畜不宁。家宅不安，宜多注意家中安全。'
+    }
+  },
+  5: {
+    name: '小吉', fortune: '小吉', fortuneLevel: 4,
+    element: '水', elementColor: '蓝色',
+    direction: '西南方', nobleDirection: '西南方', conflictDirection: '东方',
+    sixGod: '六合', numbers: '一、五、七',
+    emoji: '💜', starRating: '⭐⭐⭐⭐',
+    koujue: '小吉最吉昌，路上好商量，阴人来报喜，失物在坤方。\n行人立便至，交易甚是强，凡事皆和合，病者祈上苍。',
+    overview: '人来喜时，为六掌诀中最吉之卦，主和合、吉利。行路畅顺，女性会带来好消息。失物在西南方向可寻。行人即将到达，交易买卖很顺利。万事和合顺遂，大吉大利。',
+    details: {
+      总体运程: '好运渐来，凡事顺遂，贵人扶持。六掌诀中最吉之卦，万事和合。保持现状会越来越好。',
+      事业工作: '工作顺利，合作愉快。注意公司财务与下属沟通。宜谈合作，有贵人相助。',
+      财运求财: '财运渐旺，求财可得。有因人得财之兆。出行可得满口财，投资有回报。',
+      感情婚姻: '感情甜蜜，姻缘相合。无感情可由人介绍而得，已有恋情则顺利。婚姻能成就。',
+      健康疾病: '身体安康。注意肝胆消化系统。凡是皆和合，病者祈上苍可安。问题不大。',
+      失物寻物: '失物必是在坤方（西南），在院里或未出门。仔细在西南方向寻找。',
+      行人出行: '行人立便至！人已快到了。若问行人随时见，走失也能路上现。出行大吉。',
+      官非诉讼: '凡事皆和合。诉讼可和解，贵人相助，结果圆满。',
+      交易买卖: '交易甚是强！买卖顺利，路上好商量。利于合作谈判。',
+      田宅家宅: '家中平安和合。阴人来报喜，女性亲友带来好消息。家宅兴旺。'
+    }
+  },
+  6: {
+    name: '空亡', fortune: '大凶', fortuneLevel: 1,
+    element: '土', elementColor: '黄色',
+    direction: '中央', nobleDirection: '北方', conflictDirection: '厝地',
+    sixGod: '勾陈', numbers: '三、六、九',
+    emoji: '🟤', starRating: '⭐',
+    koujue: '空亡事不祥，阴人多乖张，求财无利益，行人有灾殃。\n失物寻不见，官事有刑伤，病人逢暗鬼，析解可安康。',
+    overview: '音信稀时，主无结果、忧虑、落空。为最凶之卦。所求之事难以如愿，求财无利可图。出行者有灾祸之虞。失物恐怕找不回来。病人可能被邪祟侵扰，需禳解祈福方可安康。凡事多有不顺，宜退守等待。',
+    details: {
+      总体运程: '运势低迷，万事成空，宜守不宜攻。多听他人意见，不要一意孤行。当前百事不可为。',
+      事业工作: '工作不顺，易被陷害或暗算。有失业风险，宜低调行事。暂时不要做重大决定。',
+      财运求财: '财运大凶！求财无利益，只得两分利。不宜投资，钱财易失。劝君在乡莫远离。',
+      感情婚姻: '感情落空，有分离之象。若不死别定生离。双方争执多，有第三者介入。',
+      健康疾病: '注意脾胃消化系统和神经系统。久病不吉命不祥。病人逢暗鬼，需禳解祈福。',
+      失物寻物: '失物寻不见。寻找事物永不见，基本无望找回。',
+      行人出行: '行人有灾殃！音信全无，归期难定。人在途中遇困难，出行极不利。',
+      官非诉讼: '官事有刑伤。官司不利，可能受刑罚。切勿与人争斗诉讼。',
+      交易买卖: '求财无利益。交易亏损可能性大，不宜进行任何投资买卖。',
+      田宅家宅: '不祥之兆。家中阴人乖张，女性亲属情绪不稳。家宅不宁。'
+    }
+  }
+};
+
+// ==================== 农历转换引擎 ====================
+/*
+ * 从 LUNAR_YEAR_DATA 中提取指定年份的编码值
+ * @param {number} year - 公历年份 (1900-2100)
+ * @returns {number} 该年的农历编码数据
+ */
+function getLunarYearInfo(year) {
+  return LUNAR_YEAR_DATA[year - 1900] || 0;
+}
+
+/*
+ * 获取指定年份的闰月月份
+ * 编码的 bits 0-3 存储闰月信息
+ * @param {number} year - 公历年份
+ * @returns {number} 闰月月份 (0=无闰月, 1-12=闰几月)
+ */
+function getLeapMonth(year) {
+  return getLunarYearInfo(year) & 0xf;
+}
+
+/*
+ * 按月份序号获取该月天数
+ * 编码的 bit (4 + monthIndex - 1) 存储该月大小：1=30天, 0=29天
+ * @param {number} year - 公历年份
+ * @param {number} monthIndex - 月份序号 (1-12 非闰年, 1-13 闰年)
+ * @returns {number} 该月天数 (29 或 30)
+ */
+function getMonthDaysByIndex(year, monthIndex) {
+  const info = getLunarYearInfo(year);
+  return (info & (1 << (4 + monthIndex - 1))) ? 30 : 29;
+}
+
+/*
+ * 判断指定月份序号是否为闰月
+ * 闰月紧跟在同名月份之后（如闰四月在四月之后）
+ * @param {number} year - 公历年份
+ * @param {number} monthIndex - 月份序号
+ * @returns {boolean} 是否为闰月
+ */
+function isLeapAtIndex(year, monthIndex) {
+  const leap = getLeapMonth(year);
+  return leap > 0 && monthIndex === leap + 1;
+}
+
+/*
+ * 计算农历年总天数
+ * 闰年有13个月，非闰年12个月，累加每月天数
+ * @param {number} year - 农历年份
+ * @returns {number} 该年总天数
+ */
+function lunarYearDays(year) {
+  const leap = getLeapMonth(year);
+  const monthCount = leap > 0 ? 13 : 12;
+  let sum = 0;
+  for (let i = 1; i <= monthCount; i++) {
+    sum += getMonthDaysByIndex(year, i);
+  }
+  return sum;
+}
+
+/*
+ * ==================== 公历转农历 ====================
+ *
+ * 算法流程：
+ * 1. 计算从基准日（农历1900年正月初一 = 公历1900-01-31）到目标日期的偏移天数
+ * 2. 从1900年起逐年减去每年天数，直到剩余天数不足一年 → 确定农历年
+ * 3. 在确定的年份内逐月减去每月天数，直到剩余天数不足一月 → 确定农历月、日
+ * 4. 判断该月是否为闰月，并转换为用户友好的显示月份
+ *
+ * @param {Date} date - 公历日期对象
+ * @returns {{ year: number, month: number, day: number, isLeap: boolean }} 农历日期
+ */
+function solarToLunar(date) {
+  // 基准日：农历1900年正月初一 = 公历1900年1月31日
+  const baseDate = new Date(1900, 0, 31);
+  // 计算两个日期之间的天数差
+  let offset = Math.floor((date - baseDate) / 86400000);
+  if (offset < 0) offset = 0; // 1900年之前的日期截断到1900年
+
+  // 第一步：确定农历年 - 逐年减天数
+  let lunarYear;
+  for (lunarYear = 1900; lunarYear <= 2100; lunarYear++) {
+    const yDays = lunarYearDays(lunarYear);
+    if (offset < yDays) break;   // 剩余天数不足一年，当前年即为农历年
+    offset -= yDays;
+  }
+  if (lunarYear > 2100) lunarYear = 2100; // 超出范围的安全回退
+
+  // 第二步：确定农历月日 - 逐月减天数
+  const leap = getLeapMonth(lunarYear);
+  const monthCount = leap > 0 ? 13 : 12;
+
+  for (let mi = 1; mi <= monthCount; mi++) {
+    const mDays = getMonthDaysByIndex(lunarYear, mi);
+    if (offset < mDays) {
+      // 剩余天数不足一月 → 找到目标月份
+      const isLeap = isLeapAtIndex(lunarYear, mi);
+      /*
+       * 转换为用户友好的显示月份：
+       * - 如果当前是闰月：显示为"闰X月"，X = 闰月编号
+       * - 如果当前月在闰月之后（且非闰月）：displayMonth = mi - 1（因为闰月多占了一个序号）
+       * - 否则：displayMonth = mi
+       */
+      let displayMonth;
+      if (isLeap) {
+        displayMonth = leap;          // 闰X月，X = 被闰的月份
+      } else if (leap > 0 && mi > leap + 1) {
+        displayMonth = mi - 1;        // 闰月后的月份序号要减1
+      } else {
+        displayMonth = mi;
+      }
+      return {
+        year: lunarYear,
+        month: displayMonth,
+        day: offset + 1,             // 日期从1开始
+        isLeap: isLeap
+      };
+    }
+    offset -= mDays;
+  }
+
+  // 兜底：理论上不会到达，但保证函数总是有返回值
+  return { year: lunarYear, month: 12, day: 30, isLeap: false };
+}
+
+/*
+ * 获取当前时辰序号 (1-12)
+ * 根据当前小时数判断属于哪个时辰
+ * 子时起点为23:00（与通常认知一致）
+ * @param {Date} [date=new Date()] - 日期对象（可选，默认当前时间）
+ * @returns {number} 时辰序号 1-12
+ */
+function getCurrentShiChen(date = new Date()) {
+  const h = date.getHours();
+  if (h >= 23 || h < 1) return 1;   // 子时 (23:00-01:00)
+  if (h >= 1 && h < 3) return 2;    // 丑时 (01:00-03:00)
+  if (h >= 3 && h < 5) return 3;    // 寅时 (03:00-05:00)
+  if (h >= 5 && h < 7) return 4;    // 卯时 (05:00-07:00)
+  if (h >= 7 && h < 9) return 5;    // 辰时 (07:00-09:00)
+  if (h >= 9 && h < 11) return 6;   // 巳时 (09:00-11:00)
+  if (h >= 11 && h < 13) return 7;  // 午时 (11:00-13:00)
+  if (h >= 13 && h < 15) return 8;  // 未时 (13:00-15:00)
+  if (h >= 15 && h < 17) return 9;  // 申时 (15:00-17:00)
+  if (h >= 17 && h < 19) return 10; // 酉时 (17:00-19:00)
+  if (h >= 19 && h < 21) return 11; // 戌时 (19:00-21:00)
+  return 12;                         // 亥时 (21:00-23:00)
+}
+
+/*
+ * 获取时辰的名称和时间范围
+ * @param {number} idx - 时辰序号 (1-12)
+ * @returns {string} 如 "子时 23:00-01:00"
+ */
+function getShiChenName(idx) {
+  return SHI_CHEN[idx - 1].name + ' ' + SHI_CHEN[idx - 1].range;
+}
+
+/*
+ * 获取干支纪年字符串
+ * 公元4年为甲子年，以此为基准推算
+ * @param {number} year - 公历年份
+ * @returns {string} 如 "丙午年 [马]"
+ */
+function getStemBranch(year) {
+  const s = STEMS[(year - 4) % 10];      // 天干
+  const b = BRANCHES[(year - 4) % 12];    // 地支
+  return s + b + '年 [' + ZODIAC[(year - 4) % 12] + ']';
+}
+
+/*
+ * ==================== 小六壬推算引擎 ====================
+ *
+ * 核心算法 — 三次顺数：
+ *   从大安（位置1）起正月，顺时针数月数次 → 得月落位 (pos1)
+ *   从月落位起初一，顺时针数日数次 → 得日落位 (pos2)
+ *   从日落位起子时，顺时针数时辰数次 → 得最终落位 (pos3)
+ *
+ * 顺时针顺序（六掌诀排列）：
+ *   大安(1) → 留连(2) → 速喜(3) → 赤口(4) → 小吉(5) → 空亡(6) → 大安(1)...
+ *
+ * 数学原理：在模6的整数环上做加法
+ *   next_pos = ((current_pos - 1 + count - 1) % 6) + 1
+ *   其中 -1 和 +1 是为了在 1-6 之间做模运算（因为位置从1开始不是从0开始）
+ *
+ * @param {number} month - 农历月份 (1-12)
+ * @param {number} day   - 农历日期 (1-30)
+ * @param {number} hour  - 时辰序号 (1-12)
+ * @returns {{ monthPos, dayPos, resultPos, result, steps }} 推算结果
+ */
+function calculate(month, day, hour) {
+  // 第一步「月上起日」：大安(1)起正月，顺时针数到目标月份
+  let pos1 = ((month - 1) % 6) + 1;
+
+  // 第二步「日上起时」：从月落位起初一，顺时针数到目标日期
+  let pos2 = ((pos1 - 1 + day - 1) % 6) + 1;
+
+  // 第三步「时上查诀」：从日落位起子时，顺时针数到目标时辰 → 得最终结果
+  let pos3 = ((pos2 - 1 + hour - 1) % 6) + 1;
+
+  return {
+    monthPos: pos1,       // 月份推算落点
+    dayPos: pos2,         // 日期推算落点
+    resultPos: pos3,      // 最终结果落点
+    result: PALACES[pos3],// 落点对应的掌诀数据
+    steps: [              // 三个推算步骤的详细信息（用于动画展示）
+      { label: '月上起日', from: 1, count: month, result: pos1 },
+      { label: '日上起时', from: pos1, count: day, result: pos2 },
+      { label: '时上查诀', from: pos2, count: hour, result: pos3 }
+    ]
+  };
+}
+
+// ==================== UI 交互逻辑 ====================
+let currentLunar = null;    // 当前农历日期缓存
+let isAnimating = false;    // 动画锁：推算进行中时阻止重复点击
+
+/*
+ * 应用初始化
+ * 填充下拉选择框、更新当前时间显示、注册事件监听
+ */
+function init() {
+  populateSelects();
+  updateAutoTime();
+  setupEvents();
+}
+
+/*
+ * 填充三个下拉选择框：农历月、农历日、时辰
+ */
+function populateSelects() {
+  const monthSel = document.getElementById('lunarMonth');
+  const daySel = document.getElementById('lunarDay');
+  const hourSel = document.getElementById('lunarHour');
+
+  // 农历月：正月、二月...冬月、腊月
+  for (let i = 1; i <= 12; i++) {
+    monthSel.appendChild(new Option((i === 1 ? '正' : i === 11 ? '冬' : i === 12 ? '腊' : numToChinese(i)) + '月', i));
+  }
+  // 农历日：初一 ~ 三十
+  for (let i = 1; i <= 30; i++) {
+    daySel.appendChild(new Option(numToChinese(i), i));
+  }
+  // 十二时辰
+  SHI_CHEN.forEach((sc, idx) => {
+    hourSel.appendChild(new Option(sc.name + ' (' + sc.range + ')', sc.hour));
+  });
+}
+
+/*
+ * 阿拉伯数字转中文数字（1-30）
+ * 使用查表法，比逐个转换更简洁
+ * @param {number} n - 数字 (1-30)
+ * @returns {string} 中文表示（如一、十一、廿一）
+ */
+function numToChinese(n) {
+  const chars = ['','一','二','三','四','五','六','七','八','九','十',
+    '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十',
+    '廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
+  return chars[n] || String(n);
+}
+
+/*
+ * 月份数字转中文显示名
+ * @param {number} m - 月份 (1-12)
+ * @param {boolean} isLeap - 是否为闰月
+ * @returns {string} 如 "正月"、"闰四月"、"腊月"
+ */
+function monthToChinese(m, isLeap) {
+  const prefix = isLeap ? '闰' : '';
+  if (m === 1) return prefix + '正月';
+  if (m === 11) return prefix + '冬月';
+  if (m === 12) return prefix + '腊月';
+  return prefix + numToChinese(m) + '月';
+}
+
+/*
+ * 更新自动时间显示区
+ * 将当前公历转换为农历，同步更新下拉选择框
+ */
+function updateAutoTime() {
+  const now = new Date();
+  const lunar = solarToLunar(now);
+  currentLunar = lunar;                      // 缓存当前农历日期
+  const shiChen = getCurrentShiChen(now);
+
+  // 显示干支纪年 + 农历月日
+  document.getElementById('autoDate').textContent =
+    getStemBranch(lunar.year) + ' · ' + monthToChinese(lunar.month, lunar.isLeap) + numToChinese(lunar.day);
+  // 显示当前时辰名称
+  document.getElementById('autoTime').textContent =
+    SHI_CHEN[shiChen - 1].name;
+
+  // 将当前时间同步到手动选择框（方便用户微调）
+  document.getElementById('lunarMonth').value = lunar.month;
+  document.getElementById('lunarDay').value = Math.min(lunar.day, 30);
+  document.getElementById('lunarHour').value = shiChen;
+}
+
+/*
+ * 注册所有UI事件监听
+ */
+function setupEvents() {
+  // 手动推算按钮：使用下拉框中选择的月日时
+  document.getElementById('btnCalc').addEventListener('click', () => {
+    const m = parseInt(document.getElementById('lunarMonth').value);
+    const d = parseInt(document.getElementById('lunarDay').value);
+    const h = parseInt(document.getElementById('lunarHour').value);
+    doCalculation(m, d, h);
+  });
+
+  // 使用当前时间按钮：自动获取当前农历月日时
+  document.getElementById('btnAuto').addEventListener('click', () => {
+    updateAutoTime();
+    const m = parseInt(document.getElementById('lunarMonth').value);
+    const d = parseInt(document.getElementById('lunarDay').value);
+    const h = parseInt(document.getElementById('lunarHour').value);
+    doCalculation(m, d, h);
+  });
+
+  // 三数报数法按钮：取三个数字（空值随机填充）起卦
+  document.getElementById('btnNumber').addEventListener('click', () => {
+    let n1 = parseInt(document.getElementById('num1').value);
+    let n2 = parseInt(document.getElementById('num2').value);
+    let n3 = parseInt(document.getElementById('num3').value);
+
+    // 空值或无效值自动随机填充（1-99）
+    if (!n1 || n1 < 1) n1 = Math.floor(Math.random() * 99) + 1;
+    if (!n2 || n2 < 1) n2 = Math.floor(Math.random() * 99) + 1;
+    if (!n3 || n3 < 1) n3 = Math.floor(Math.random() * 99) + 1;
+
+    // 回填到输入框，让用户看到实际使用的数字
+    document.getElementById('num1').value = n1;
+    document.getElementById('num2').value = n2;
+    document.getElementById('num3').value = n3;
+
+    doCalculation(n1, n2, n3, true); // 第四个参数标记为报数法
+  });
+
+  // 数字输入框支持回车键触发推算
+  ['num1','num2','num3'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('btnNumber').click();
+    });
+  });
+
+  // 点击农历日期区域也可刷新为当前时间
+  document.getElementById('autoDate').addEventListener('click', updateAutoTime);
+}
+
+/*
+ * 执行推算 + 播放动画
+ *
+ * 动画流程：
+ * 1. 重置所有状态（宫殿高亮、步骤指示器、结果卡片）
+ * 2. 第一步动画：从大安起，顺时针数月
+ * 3. 第二步动画：从月落位起，顺时针数日
+ * 4. 第三步动画：从日落位起，顺时针数时
+ * 5. 高亮最终结果 → 振动反馈 → 显示结果卡片
+ *
+ * @param {number} month - 第一数
+ * @param {number} day - 第二数
+ * @param {number} hour - 第三数
+ * @param {boolean} [isNumberMethod=false] - 是否为报数法（影响步骤标签文字）
+ */
+async function doCalculation(month, day, hour, isNumberMethod = false) {
+  if (isAnimating) return; // 动画锁：防止快速连击导致动画错乱
+  isAnimating = true;
+
+  const result = calculate(month, day, hour);
+
+  // 清除所有宫殿的高亮状态（含轨迹）
+  document.querySelectorAll('.palace').forEach(p => {
+    p.classList.remove('active', 'result', 'counting', 'trail');
+  });
+
+  // 重置步骤指示器
+  document.querySelectorAll('.step-dot').forEach(d => {
+    d.classList.remove('done', 'current');
+  });
+
+  // 隐藏旧的结果卡片
+  const resultCard = document.getElementById('resultCard');
+  resultCard.classList.add('hidden');
+
+  // 根据推算模式切换步骤标签文字
+  if (isNumberMethod) {
+    document.getElementById('step1').textContent = '数1';
+    document.getElementById('step2').textContent = '数2';
+    document.getElementById('step3').textContent = '数3';
+  } else {
+    document.getElementById('step1').textContent = '月';
+    document.getElementById('step2').textContent = '日';
+    document.getElementById('step3').textContent = '时';
+  }
+
+  // === 动画序列：三步依次播放 ===
+
+  // 第一步：月上起日
+  document.getElementById('step1').classList.add('current');
+  await animateCounting(1, month, result.steps[0].result);
+  document.getElementById('step1').classList.remove('current');
+  document.getElementById('step1').classList.add('done');
+
+  await sleep(300); // 步骤间停顿，让用户感知进度
+
+  // 第二步：日上起时
+  document.getElementById('step2').classList.add('current');
+  await animateCounting(result.steps[1].from, day, result.steps[1].result);
+  document.getElementById('step2').classList.remove('current');
+  document.getElementById('step2').classList.add('done');
+
+  await sleep(300);
+
+  // 第三步：时上查诀
+  document.getElementById('step3').classList.add('current');
+  await animateCounting(result.steps[2].from, hour, result.steps[2].result);
+  document.getElementById('step3').classList.remove('current');
+  document.getElementById('step3').classList.add('done');
+
+  // 最终结果高亮
+  await sleep(200);
+  highlightResult(result.resultPos);
+
+  // 振动反馈：模拟掐指一算的物理触感
+  if (navigator.vibrate) {
+    navigator.vibrate([50, 100, 50]); // 短振-停-短振
+  }
+
+  // 生成并显示结果卡片
+  showResult(result, isNumberMethod, month, day, hour);
+
+  isAnimating = false; // 释放动画锁
+}
+
+/*
+ * 推算动画：在六宫格上顺时针逐格跳动
+ *
+ * 流转效果策略：
+ *   - 第1个数高亮起始位置（如"正月"就停在大安）
+ *   - 之后每数一个数顺时针移一格
+ *   - 已走过的宫格保留淡金色轨迹（.trail），显示流转方向
+ *   - 当前停留的宫格用亮金色高亮（.counting）
+ *   - 最后一步用 active 高亮，轨迹清空
+ *   - 越往后节奏越快，营造"逼近结果"的紧张感
+ *
+ * @param {number} fromIdx - 起始位置 (1-6)
+ * @param {number} count - 总共要数的次数（月数/日数/时数）
+ * @param {number} resultIdx - 最终落点位置 (1-6)
+ * @returns {Promise} 动画完成后 resolve
+ */
+function animateCounting(fromIdx, count, resultIdx) {
+  return new Promise(resolve => {
+    let current = fromIdx;     // 当前指针位置
+    let n = 1;                 // 当前数到第几下（1-based）
+    const visited = [];        // 已走过的宫格索引（用于绘制轨迹）
+
+    function tick() {
+      if (n > count) {
+        // 动画完成：清除所有中间状态，高亮最终落点
+        document.querySelectorAll('.palace').forEach(p => {
+          p.classList.remove('counting', 'trail');
+        });
+        highlightPalace(resultIdx, 'active');
+        resolve();
+        return;
+      }
+
+      // 清除当前轮次的 counting 状态
+      document.querySelectorAll('.palace.counting').forEach(p => p.classList.remove('counting'));
+
+      // 为已走过的宫格设置轨迹
+      visited.forEach(idx => {
+        getPalace(idx).classList.add('trail');
+      });
+
+      // 高亮当前宫格（始终用 counting，最后结果由收尾逻辑统一处理）
+      getPalace(current).classList.add('counting');
+
+      // 记录当前宫格到轨迹
+      visited.push(current);
+
+      // 还没数完：顺时针移到下一格
+      if (n < count) {
+        current = (current % 6) + 1;  // 1→2→3→4→5→6→1...
+      }
+
+      // 动态延迟：先快后慢再快（紧张感节奏）
+      const progress = (n - 1) / count;
+      const delay = n === count ? 400 : 100 + Math.sin(progress * Math.PI) * 180;
+      n++;
+      setTimeout(tick, delay);
+    }
+
+    // 延迟200ms开始动画（给用户一个"即将开始"的心理准备）
+    setTimeout(tick, 200);
+  });
+}
+
+/* 获取指定编号的宫格 DOM 元素 */
+function getPalace(idx) {
+  return document.querySelector('.palace-' + idx);
+}
+
+/*
+ * 高亮指定位置的宫殿
+ * 处理逻辑：
+ *   - 清除同一类型的所有其他高亮（防止多个宫殿同时高亮）
+ *   - 'active' 优先级高于 'counting'，设置 active 时清除所有 counting
+ *   - 'counting' 时不清除已有的 'active'（避免第一步的active被后续counting覆盖）
+ * @param {number} idx - 宫殿位置 (1-6)
+ * @param {string} className - CSS类名 ('active' | 'counting' | 'result')
+ */
+function highlightPalace(idx, className) {
+  // 清除当前类型的所有高亮
+  document.querySelectorAll('.palace.' + className).forEach(p => {
+    // 特殊处理：如果正在清除 counting 但该宫殿同时有 active，不要清除 counting
+    // 这样避免重复清除/重设导致闪烁
+    if (!(className === 'counting' && p.classList.contains('active'))) {
+      p.classList.remove(className);
+    }
+  });
+  // 设置 active 时清除所有 counting 和 trail（active优先级更高）
+  if (className === 'active') {
+    document.querySelectorAll('.palace.counting, .palace.trail').forEach(p => {
+      p.classList.remove('counting', 'trail');
+    });
+  }
+
+  const palace = document.querySelector('.palace-' + idx);
+  if (palace) {
+    palace.classList.add(className);
+  }
+}
+
+/*
+ * 高亮最终结果位置（红色呼吸光晕）
+ * 清除所有中间状态，仅保留最终结果高亮
+ * @param {number} idx - 结果宫殿位置 (1-6)
+ */
+function highlightResult(idx) {
+  document.querySelectorAll('.palace').forEach(p => {
+    p.classList.remove('active', 'counting', 'result', 'trail');
+  });
+  const palace = document.querySelector('.palace-' + idx);
+  if (palace) {
+    palace.classList.add('result');
+  }
+}
+
+/*
+ * 生成并显示结果卡片
+ *
+ * 卡片结构：
+ *   头部（红色渐变）→ 基础信息三列网格 → 掌诀总断 → 传统口诀 → 十类详解 → 吉凶指数
+ *
+ * @param {object} result - calculate() 返回的结果对象
+ * @param {boolean} isNumberMethod - 是否报数法
+ * @param {number} num1 - 第一数
+ * @param {number} num2 - 第二数
+ * @param {number} num3 - 第三数
+ */
+function showResult(result, isNumberMethod, num1, num2, num3) {
+  const card = document.getElementById('resultCard');
+  const p = result.result;
+  const isGood = p.fortune.includes('吉');
+  const fortuneClass = isGood ? 'fortune-good' : 'fortune-bad';
+
+  // 构建输入描述文字
+  let inputDesc = '';
+  if (isNumberMethod) {
+    inputDesc = `报数法：${num1} → ${num2} → ${num3}`;
+  } else {
+    const m = parseInt(document.getElementById('lunarMonth').value);
+    const d = parseInt(document.getElementById('lunarDay').value);
+    const h = parseInt(document.getElementById('lunarHour').value);
+    inputDesc = '农历' + monthToChinese(m, false) + numToChinese(d) + ' ' + SHI_CHEN[h-1].name;
+  }
+
+  // 动态生成HTML：使用模板字符串将掌诀数据填充到卡片的各个区域
+  card.innerHTML = `
+    <div class="result-header">
+      <div class="r-name">${p.emoji} ${p.name}</div>
+      <div class="r-fortune ${fortuneClass}">${p.fortune} · ${p.sixGod} · 属${p.element}</div>
+      <div style="font-size:13px; opacity:0.7; margin-top:6px;">${inputDesc}</div>
+    </div>
+
+    <div class="result-body">
+      <!-- 基础信息：五行、六神、方位、谋事主数、贵人方、冲犯方 六宫速查 -->
+      <div class="r-section">
+        <div class="r-item">
+          <div class="item-label">五行</div>
+          <div class="item-val">${p.element} (${p.elementColor})</div>
+        </div>
+        <div class="r-item">
+          <div class="item-label">六神</div>
+          <div class="item-val">${p.sixGod}</div>
+        </div>
+        <div class="r-item">
+          <div class="item-label">方位</div>
+          <div class="item-val">${p.direction}</div>
+        </div>
+        <div class="r-item">
+          <div class="item-label">谋事主数</div>
+          <div class="item-val">${p.numbers}</div>
+        </div>
+        <div class="r-item">
+          <div class="item-label">贵人方</div>
+          <div class="item-val">${p.nobleDirection}</div>
+        </div>
+        <div class="r-item">
+          <div class="item-label">冲犯方</div>
+          <div class="item-val">${p.conflictDirection}</div>
+        </div>
+      </div>
+
+      <!-- 掌诀总断：现代白话概述 -->
+      <div class="detail-item" style="border-left-color: ${isGood ? 'var(--green)' : 'var(--red)'};">
+        <div class="d-label">📖 掌诀总断</div>
+        <div class="d-text">${p.overview}</div>
+      </div>
+
+      <!-- 传统口诀：古文原文 -->
+      <div class="koujue-box">
+        <div class="koujue-title">📜 传统口诀</div>
+        <div class="koujue-text">${p.koujue.replace(/\n/g, '<br>')}</div>
+      </div>
+
+      <!-- 十类分类断辞 -->
+      <div class="section-title">🔍 各事项详解</div>
+      <div class="detail-list">
+        ${Object.entries(p.details).map(([key, val]) => `
+          <div class="detail-item">
+            <div class="d-label">${getCategoryIcon(key)} ${key}</div>
+            <div class="d-text">${val}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- 吉凶指数可视化：进度条 + 星级 -->
+      <div class="fortune-meter">
+        <div class="meter-label">吉凶指数</div>
+        <div class="meter-bar">
+          <div class="meter-fill ${isGood ? 'meter-good' : 'meter-bad'}" style="width:${(p.fortuneLevel/5)*100}%"></div>
+        </div>
+        <div class="meter-stars">${p.starRating} (${p.fortuneLevel}/5)</div>
+      </div>
+    </div>
+  `;
+
+  // 显示卡片并平滑滚动到可见区域
+  card.classList.remove('hidden');
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/*
+ * 获取分类标题对应的图标
+ * 为十类断辞提供视觉区分
+ * @param {string} key - 分类标题
+ * @returns {string} emoji图标
+ */
+function getCategoryIcon(key) {
+  const icons = {
+    '总体运程': '🔮', '事业工作': '💼', '财运求财': '💰',
+    '感情婚姻': '💕', '健康疾病': '🏥', '失物寻物': '🔍',
+    '行人出行': '🚶', '官非诉讼': '⚖️', '交易买卖': '🤝',
+    '田宅家宅': '🏠'
+  };
+  return icons[key] || '📌';
+}
+
+/*
+ * Promise 化的 setTimeout
+ * 用于 async/await 流程中插入延迟
+ * @param {number} ms - 延迟毫秒数
+ * @returns {Promise} 延迟后 resolve
+ */
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+/*
+ * ==================== PWA 安装逻辑 ====================
+ * 利用浏览器 beforeinstallprompt 事件实现自定义安装提示
+ */
+
+let deferredPrompt = null; // 保存安装提示事件对象
+
+/*
+ * 监听 beforeinstallprompt 事件
+ * 浏览器准备显示安装提示时触发
+ * 我们阻止默认行为，改为自定义的延迟显示
+ */
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();          // 阻止浏览器默认的安装提示
+  deferredPrompt = e;          // 保存事件对象，供后续手动触发
+  // 延迟3秒显示自定义安装横幅（避免页面刚加载就弹出，给用户浏览时间）
+  setTimeout(() => {
+    if (deferredPrompt) {
+      document.getElementById('installBanner').classList.add('show');
+    }
+  }, 3000);
+});
+
+/*
+ * 监听 appinstalled 事件
+ * 用户完成安装后触发，隐藏安装横幅
+ */
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  document.getElementById('installBanner').classList.remove('show');
+  console.log('小六壬 App 已安装到主屏幕');
+});
+
+/*
+ * 用户点击安装横幅时调用
+ * 触发浏览器原生安装对话框
+ */
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();   // 显示原生安装对话框
+    deferredPrompt.userChoice.then(result => {
+      if (result.outcome === 'accepted') {
+        console.log('用户安装了 App');
+      }
+      deferredPrompt = null;
+      document.getElementById('installBanner').classList.remove('show');
+    });
+  }
+}
+
+// 如果已经在独立模式（已安装为PWA），不需要显示安装横幅
+if (window.matchMedia('(display-mode: standalone)').matches) {
+  document.getElementById('installBanner').classList.remove('show');
+}
+
+/*
+ * ==================== Service Worker 注册 ====================
+ * 注册 PWA Service Worker 实现离线缓存
+ * 注册失败不影响主应用功能（静默失败）
+ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {
+      // 静默失败：即使 SW 注册失败，App 仍可在线使用
+    });
+  });
+}
+
+// ==================== 初始化：DOM加载完成后启动App ====================
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
