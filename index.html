@@ -1519,9 +1519,20 @@ function animateCounting(fromIdx, count, resultIdx) {
         current = (current % 6) + 1;  // 1→2→3→4→5→6→1...
       }
 
-      // 动态延迟：后半程节奏加快，突显逼近结果的紧迫感
-      const progress = (n - 1) / count;
-      const delay = n === count ? 450 : 120 + Math.sin(progress * Math.PI) * 150;
+      // 动态延迟（三段变速：起手慢 → 中段极快 → 末段渐慢）
+      const SHORT = 12;
+      let delay;
+      if (count <= SHORT) {
+        // 短动画(≤12步)：保持原节奏，后半程加快
+        const progress = (n - 1) / count;
+        delay = n === count ? 450 : 120 + Math.sin(progress * Math.PI) * 150;
+      } else {
+        // 长动画(>12步)：起手3步150ms → 中段25ms掠过 → 末段6步100→375ms渐慢
+        if (n === count) delay = 450;
+        else if (n <= 3) delay = 150;
+        else if (n >= count - 5) delay = 100 + (5 - (count - n)) * 55;
+        else delay = 25;
+      }
       n++;
       setTimeout(tick, delay);
     }
