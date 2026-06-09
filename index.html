@@ -359,7 +359,7 @@
     color: var(--text2);
     opacity: 0.45;
   }
-  /* 推算过程中当前停留位置（金色高亮） */
+  /* 推算过程中当前停留位置（金色脉冲光晕 + 放大突出） */
   .palace.active {
     border-color: var(--gold);
     background: var(--gold-light);
@@ -386,23 +386,39 @@
     from { box-shadow: 0 0 20px rgba(178,34,34,0.4), 0 4px 16px var(--shadow); }
     to { box-shadow: 0 0 36px rgba(178,34,34,0.7), 0 6px 24px var(--shadow); }
   }
-  /* 推算过程中途经的位置（浅金色标记） */
+  /* 已走过的路径轨迹（极淡标记，仅显示流转方向） */
+  .palace.trail {
+    border-color: rgba(200,164,78,0.18);
+    background: #fef9e7;
+    box-shadow: 0 0 3px rgba(200,164,78,0.06);
+    transform: scale(1.0);
+  }
+  /* 推算过程中指针当前所在位置（大幅放大 + 金色脉冲呼吸光晕，确保轮动效果可见） */
   .palace.counting {
     border-color: var(--gold);
     background: #fff8e8;
-    box-shadow: 0 0 16px rgba(200,164,78,0.35);
-    transform: scale(1.03);
+    box-shadow: 0 0 24px rgba(200,164,78,0.6), 0 6px 16px var(--shadow);
+    transform: scale(1.12);
+    z-index: 7;
+    animation: counting-pulse 0.45s ease-in-out infinite alternate;
   }
-  /* 已走过的路径轨迹（比 counting 更淡，显示流转方向） */
-  .palace.trail {
-    border-color: var(--gold);
-    background: #fef9e7;
-    box-shadow: 0 0 4px rgba(200,164,78,0.1);
-    transform: scale(1.01);
+  @keyframes counting-pulse {
+    from {
+      box-shadow: 0 0 18px rgba(200,164,78,0.45), 0 4px 12px var(--shadow);
+      transform: scale(1.1);
+    }
+    to {
+      box-shadow: 0 0 34px rgba(200,164,78,0.75), 0 8px 20px var(--shadow);
+      transform: scale(1.15);
+    }
   }
   @media (prefers-color-scheme: dark) {
     .palace.trail {
       background: #2a2010;
+      border-color: rgba(200,164,78,0.1);
+    }
+    .palace.counting {
+      background: #3a2a10;
     }
   }
 
@@ -1490,10 +1506,12 @@ function animateCounting(fromIdx, count, resultIdx) {
         getPalace(idx).classList.add('trail');
       });
 
-      // 高亮当前宫格（始终用 counting，最后结果由收尾逻辑统一处理）
-      getPalace(current).classList.add('counting');
+      // 高亮当前宫格：先移除trail再添加counting（确保两种状态不冲突）
+      const curPalace = getPalace(current);
+      curPalace.classList.remove('trail');
+      curPalace.classList.add('counting');
 
-      // 记录当前宫格到轨迹
+      // 记录当前宫格到轨迹（下一次tick时会变为trail）
       visited.push(current);
 
       // 还没数完：顺时针移到下一格
@@ -1501,9 +1519,9 @@ function animateCounting(fromIdx, count, resultIdx) {
         current = (current % 6) + 1;  // 1→2→3→4→5→6→1...
       }
 
-      // 动态延迟：先快后慢再快（紧张感节奏）
+      // 动态延迟：后半程节奏加快，突显逼近结果的紧迫感
       const progress = (n - 1) / count;
-      const delay = n === count ? 400 : 100 + Math.sin(progress * Math.PI) * 180;
+      const delay = n === count ? 450 : 120 + Math.sin(progress * Math.PI) * 150;
       n++;
       setTimeout(tick, delay);
     }
