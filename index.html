@@ -280,9 +280,9 @@
    *   2行×3列 Grid 网格，中央叠加太极图
    *   gap 透出背景色形成罗盘格线
    *
-   *   罗盘排列：
-   *     ⑥ 空亡      ① 大安      ② 留连
-   *     ⑤ 小吉      ④ 赤口      ③ 速喜
+   *   罗盘排列（传统样式）：
+   *     ② 留连      ③ 速喜      ④ 赤口
+   *     ① 大安      ⑥ 空亡      ⑤ 小吉
    */
   .circle-container {
     position: relative;
@@ -432,12 +432,12 @@
    * 使用 CSS order 属性重新排列 DOM 顺序（HTML中为1-6）
    * 使其符合罗盘布局
    */
-  .palace-1 { order: 1; }  /* 大安 - 上中 */
-  .palace-2 { order: 2; }  /* 留连 - 右上 */
-  .palace-3 { order: 5; }  /* 速喜 - 右下 */
-  .palace-4 { order: 4; }  /* 赤口 - 下中 */
-  .palace-5 { order: 3; }  /* 小吉 - 左下 */
-  .palace-6 { order: 0; }  /* 空亡 - 左上 */
+  .palace-1 { order: 3; }  /* 大安 - 第二行左 */
+  .palace-2 { order: 0; }  /* 留连 - 第一行左 */
+  .palace-3 { order: 1; }  /* 速喜 - 第一行中 */
+  .palace-4 { order: 2; }  /* 赤口 - 第一行右 */
+  .palace-5 { order: 5; }  /* 小吉 - 第二行右 */
+  .palace-6 { order: 4; }  /* 空亡 - 第二行中 */
 
   /* ===== 推算步骤指示器 ===== */
   .steps-row {
