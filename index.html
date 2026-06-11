@@ -197,37 +197,63 @@
     appearance: none;           /* 移除浏览器默认下拉箭头 */
     -webkit-appearance: none;
     width: 100%;
-    padding: 10px 8px;
-    border: 1px solid var(--border);
+    padding: 10px 28px 10px 8px; /* 右侧留空给自定义箭头 */
+    border: 1.5px solid var(--border);
     border-radius: 10px;
-    background: var(--card2);
+    background: var(--card);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a07830' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
     color: var(--text);
     font-size: 15px;
     text-align: center;
     font-family: inherit;
     cursor: pointer;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  .input-group select:hover {
+    border-color: var(--gold);
+    background-color: var(--card);
   }
   .input-group select:focus {
     border-color: var(--gold); /* 聚焦时金色高亮 */
+    box-shadow: 0 0 0 3px rgba(200,164,78,0.15);
   }
   /* 数字输入框样式 */
   .input-group input {
     width: 100%;
     padding: 10px 8px;
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     border-radius: 10px;
-    background: var(--card2);
+    background: var(--card);
     color: var(--text);
     font-size: 15px;
     text-align: center;
     font-family: inherit;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  /* 数字输入框上下箭头始终显示 */
+  .input-group input[type="number"]::-webkit-inner-spin-button,
+  .input-group input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: inner-spin-button !important;
+    opacity: 1 !important;
+  }
+  .input-group input:hover {
+    border-color: var(--gold);
   }
   .input-group input:focus {
     border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(200,164,78,0.15);
+  }
+  /* 数字输入框上下箭头始终显示 */
+  .input-group input[type="number"] {
+    -webkit-appearance: auto;
+  }
+  .input-group input[type="number"]::-webkit-inner-spin-button {
+    opacity: 1 !important;
+    display: block !important;
   }
   .input-group input::placeholder {
     color: var(--text2);
@@ -686,7 +712,8 @@
     .palace .p-name { font-size: 14px; }
     .circle-center { width: 36px; height: 36px; }
     .circle-center .yin-yang { font-size: 18px; }
-    .input-group select { font-size: 13px; padding: 8px 4px; }
+    .input-group select { font-size: 13px; padding: 8px 24px 8px 4px; background-position: right 6px center; }
+    .input-group input { font-size: 13px; padding: 8px 4px; }
   }
 </style>
 </head>
