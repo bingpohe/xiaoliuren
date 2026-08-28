@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- 视口配置：禁止缩放确保PWA全屏体验，viewport-fit=cover适配iPhone刘海屏 -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <!-- PWA主题色：深红色，与App传统风格一致 -->
 <meta name="theme-color" content="#8b1a1a">
 <!-- iOS Safari 全屏模式支持 -->
@@ -82,8 +82,8 @@
     align-items: center;
     padding: 20px 16px calc(20px + var(--safe-bottom)); /* 底部额外留白给安全区 */
     -webkit-font-smoothing: antialiased; /* macOS/iOS字体平滑 */
-    user-select: none;          /* 禁止文本选择，增强App感 */
     -webkit-user-select: none;
+    user-select: none;          /* 禁止文本选择，增强App感 */
     /*
      * 页面背景纹理：上下两个径向渐变模拟光照
      * - 上方金色光晕：暗示"吉兆"
@@ -141,6 +141,8 @@
     box-shadow: 0 2px 12px var(--shadow), 0 0 0 1px var(--border);
     border: 1px solid var(--border);
   }
+  /* 紧凑卡片（罗盘容器专用，原为内联 style） */
+  .card-tight { padding: 8px; }
 
   /* ===== 自动时间显示区 ===== */
   .auto-time {
@@ -194,8 +196,8 @@
   }
   /* 下拉选择框统一样式 */
   .input-group select {
-    appearance: none;           /* 移除浏览器默认下拉箭头 */
     -webkit-appearance: none;
+    appearance: none;           /* 移除浏览器默认下拉箭头 */
     width: 100%;
     padding: 10px 28px 10px 8px; /* 右侧留空给自定义箭头 */
     border: 1.5px solid var(--border);
@@ -250,6 +252,7 @@
   /* 数字输入框上下箭头始终显示 */
   .input-group input[type="number"] {
     -webkit-appearance: auto;
+    appearance: auto;
   }
   .input-group input[type="number"]::-webkit-inner-spin-button {
     opacity: 1 !important;
@@ -299,6 +302,15 @@
     padding: 10px;
     letter-spacing: 1px;
   }
+  /* 金色描边按钮（报数法专用） */
+  .btn-gold {
+    color: var(--gold2);
+    border-color: var(--gold);
+  }
+  /* 按钮之间的垂直间距（原为内联 style） */
+  #btnCalc { margin-top: 12px; }
+  #btnAuto { margin-top: 8px; }
+  #btnNumber { margin-top: 8px; }
 
   /*
    * ===== 六宫格罗盘布局 =====
@@ -472,6 +484,7 @@
     justify-content: center;
     align-items: center;
     padding: 4px 0;
+    margin-top: 8px;
   }
   /* 步骤圆点：显示"月→日→时"或"数1→数2→数3" */
   .step-dot {
@@ -739,23 +752,23 @@
     <!-- 手动输入三要素：农历月、农历日、时辰 -->
     <div class="input-row">
       <div class="input-group">
-        <label>农历月</label>
+        <label for="lunarMonth">农历月</label>
         <select id="lunarMonth"></select>
       </div>
       <div class="input-group">
-        <label>农历日</label>
+        <label for="lunarDay">农历日</label>
         <select id="lunarDay"></select>
       </div>
       <div class="input-group">
-        <label>时辰</label>
+        <label for="lunarHour">时辰</label>
         <select id="lunarHour"></select>
       </div>
     </div>
 
-    <button class="btn btn-primary" id="btnCalc" style="margin-top:12px">
+    <button class="btn btn-primary" id="btnCalc">
       🔮 开始推算
     </button>
-    <button class="btn btn-outline" id="btnAuto" style="margin-top:8px">
+    <button class="btn btn-outline" id="btnAuto">
       📍 使用当前时间
     </button>
 
@@ -775,7 +788,7 @@
         <input type="number" id="num3" placeholder="任意数" min="1" inputmode="numeric">
       </div>
     </div>
-    <button class="btn btn-outline" id="btnNumber" style="margin-top:8px; color: var(--gold2); border-color: var(--gold);">
+    <button class="btn btn-outline btn-gold" id="btnNumber">
       🎲 随机取数推算
     </button>
   </div>
@@ -786,7 +799,7 @@
   </div>
 
   <!-- 六宫格可视化区域 -->
-  <div class="card" style="padding:8px">
+  <div class="card card-tight">
     <div class="circle-container" id="circleContainer">
       <!-- 六个掌诀按顺时针排列（1-大安起，顺时针数） -->
       <div class="palace palace-1" data-idx="1">
@@ -826,7 +839,7 @@
     </div>
 
     <!-- 推算步骤指示器：显示月→日→时或数1→数2→数3的动画进度 -->
-    <div class="steps-row" style="margin-top:8px">
+    <div class="steps-row">
       <span class="step-dot" id="step1">月</span>
       <span class="step-arrow">→</span>
       <span class="step-dot" id="step2">日</span>
